@@ -23,11 +23,11 @@ jobs:
 
       # Restore dependencies
       - name: Restore dependencies
-        run: dotnet restore FileStorageService/src/Presentation/Presentation.csproj
+        run: dotnet restore ./FileStorageService.sln
 
       # Build the solution
       - name: Build
-        run: dotnet build FileStorageService/FileStorageService.sln --configuration Release --no-restore
+        run: dotnet build ./src/Presentation/Presentation.csproj --configuration Release --no-restore
 
       # Run tests
       - name: Test
