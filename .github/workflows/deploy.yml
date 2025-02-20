@@ -35,7 +35,7 @@ jobs:
 
       # Publish the application
       - name: Publish
-        run: dotnet publish src/Presentation/Presentation.csproj -c Release -o ./publish
+        run: dotnet publish FileStorageService/src/Presentation/Presentation.csproj -c Release -o ./publish
 
       # # Deploy database schema to Azure SQL
       # - name: Deploy database migrations
