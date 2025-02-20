@@ -12,7 +12,7 @@ builder.Services.AddSwaggerGen(options =>
     {
         Title = "Open API",
         Version = "v1",
-        Description = "ASP.NET Core 09 API"
+        Description = "ASP.NET Core 9 API"
     });
 
     // Optional: Add JWT Bearer Authentication if needed
