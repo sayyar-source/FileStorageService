@@ -23,15 +23,15 @@ jobs:
 
       # Restore dependencies
       - name: Restore dependencies
-        run: dotnet restore FileStorageService.sln
+        run: dotnet restore FileStorageService/FileStorageService.sln
 
       # Build the solution
       - name: Build
-        run: dotnet build FileStorageService.sln --configuration Release --no-restore
+        run: dotnet build FileStorageService/FileStorageService.sln --configuration Release --no-restore
 
       # Run tests
       - name: Test
-        run: dotnet test FileStorageService.sln --no-build --verbosity normal
+        run: dotnet test FileStorageService/FileStorageService.sln --no-build --verbosity normal
 
       # Publish the application
       - name: Publish
