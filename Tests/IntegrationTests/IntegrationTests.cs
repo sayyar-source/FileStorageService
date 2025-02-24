@@ -23,9 +23,9 @@ public class FileServiceIntegrationTests : IClassFixture<IntegrationTestFixture>
     {
         _dbContext = fixture.DbContext;
         _blobServiceClient = fixture.BlobServiceClient;
-
+        string blobStorageConnection = "UseDevelopmentStorage=true";
         var storageService = new AzureBlobStorageService(
-            "DefaultEndpointsProtocol=https;AccountName=mystorage2000;AccountKey=CC7kFkxPuNoN4cUWJjR6UYu2dNm+ovyPfrA0hoSIE/YbAXWUcwi/6fr1TPbZhQBe7DrHdPw8uw4Y+AStq1vprQ==;EndpointSuffix=core.windows.net",
+           blobStorageConnection,
             fixture.StorageServiceLogger);
 
         _fileService = new FileService(
@@ -173,14 +173,14 @@ public class IntegrationTestFixture : IDisposable
     public IntegrationTestFixture()
     {
         var options = new DbContextOptionsBuilder<AppDbContext>()
-            .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString()) // Unique DB per test
+            .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
             .EnableSensitiveDataLogging()
             .Options;
         DbContext = new AppDbContext(options);
 
         try
         {
-            BlobServiceClient = new BlobServiceClient("DefaultEndpointsProtocol=https;AccountName=mystorage2000;AccountKey=CC7kFkxPuNoN4cUWJjR6UYu2dNm+ovyPfrA0hoSIE/YbAXWUcwi/6fr1TPbZhQBe7DrHdPw8uw4Y+AStq1vprQ==;EndpointSuffix=core.windows.net");
+            BlobServiceClient = new BlobServiceClient("UseDevelopmentStorage=true");
             BlobServiceClient.GetBlobContainerClient("files").CreateIfNotExists();
         }
         catch (Exception ex)
