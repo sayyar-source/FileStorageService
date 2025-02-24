@@ -13,7 +13,7 @@ public class AzureBlobStorageService : IStorageService
     public AzureBlobStorageService(string connectionString, ILogger<AzureBlobStorageService> logger)
     {
         _blobServiceClient = new BlobServiceClient(connectionString);
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _logger = logger;
     }
 
     public async Task<string> UploadFileAsync(IFormFile file, string blobName)

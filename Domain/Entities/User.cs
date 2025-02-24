@@ -1,11 +1,11 @@
 ﻿namespace Domain.Entities;
 public class User
 {
-    public Guid Id { get; private set; }
-    public string Email { get; private set; }
-    public string PasswordHash { get; private set; }  // Added for local login
-    public List<FileEntry> Files { get; private set; } = [];
-    public List<SharedAccess> SharedAccesses { get; private set; } = [];
+    public Guid Id { get;  set; }
+    public string Email { get;  set; }
+    public string PasswordHash { get;  set; }
+    public List<FileEntry> Files { get;  set; } = [];
+    public List<SharedAccess> SharedAccesses { get;  set; } = [];
 
     private User() { } 
     public User(string email, string password)

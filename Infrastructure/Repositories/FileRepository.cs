@@ -37,7 +37,7 @@ public class FileRepository : IFileRepository
                 .Where(f => f.OwnerId == ownerId && f.ParentFolderId == parentFolderId)
                 .ToListAsync();
         }
-        catch (Exception ex)
+        catch 
         {
             return new List<FileEntry>();
         }
@@ -50,7 +50,7 @@ public class FileRepository : IFileRepository
                 .Where(f => f.OwnerId == ownerId && f.ParentFolderId == parentFolderId)
                 .ToListAsync();
         }
-        catch (Exception ex)
+        catch 
         {
             return new List<FileEntry>();
         }
@@ -136,7 +136,7 @@ public class FileRepository : IFileRepository
                 .OrderBy(fv => fv.VersionNumber)
                 .ToListAsync();
         }
-        catch (Exception ex)
+        catch
         {
             return new List<FileVersion>();
         }

@@ -23,7 +23,6 @@ public class FileController : ControllerBase
         var userId = GetUserId();
         var fileDto = await _fileService.UploadFileAsync(file, userId, parentFolderId, fileEntryId);
         return Ok(fileDto);
-       // return fileEntryId.HasValue ? Ok(fileDto) : CreatedAtAction(nameof(GetFileOrFolder), new { parentFolderId = fileDto.ParentFolderId }, fileDto);
     }
 
     [HttpPost("folder")]
