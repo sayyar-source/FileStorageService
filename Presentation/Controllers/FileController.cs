@@ -17,6 +17,7 @@ public class FileController : ControllerBase
         _fileService = fileService ?? throw new ArgumentNullException(nameof(fileService));
     }
 
+    // Uploads a file to storage
     [HttpPost("upload")]
     public async Task<IActionResult> UploadFile(IFormFile file, [FromQuery] Guid? parentFolderId, [FromQuery] Guid? fileEntryId)
     {
@@ -25,6 +26,7 @@ public class FileController : ControllerBase
         return Ok(fileDto);
     }
 
+    // Creates a new folder
     [HttpPost("folder")]
     public async Task<IActionResult> CreateFolder([FromBody] string name, [FromQuery] Guid? parentFolderId)
     {
@@ -33,6 +35,7 @@ public class FileController : ControllerBase
         return Ok(folderDto);
     }
 
+    // Gets details about a specific file or folder
     [HttpGet("{id}")]
     public async Task<IActionResult> GetFileOrFolder(Guid id)
     {
@@ -41,6 +44,7 @@ public class FileController : ControllerBase
         return Ok(entry);
     }
 
+    // Accesses a file or folder using a share link
     [HttpGet("share/{shareLink}")]
     public async Task<IActionResult> GetByShareLink(string shareLink)
     {
@@ -49,14 +53,17 @@ public class FileController : ControllerBase
         return Ok(entry);
     }
 
+    // Shares a file or folder with another user
     [HttpPost("{id}/share")]
     public async Task<IActionResult> ShareFileOrFolder(Guid id, [FromQuery] Guid targetUserId, [FromQuery] AccessLevel accessLevel)
     {
+        // Gets the logged-in user’s ID (the owner)
         var ownerId = GetUserId();
         var response = await _fileService.ShareFileOrFolderAsync(id, ownerId, targetUserId, accessLevel);
         return Ok(response);
     }
 
+    // Lists all files and folders inside a folder
     [HttpGet("contents")]
     public async Task<IActionResult> ListFolderContents([FromQuery] Guid? folderId)
     {
@@ -65,6 +72,7 @@ public class FileController : ControllerBase
         return Ok(contents);
     }
 
+    // Shows all versions of a file
     [HttpGet("{fileId}/versions")]
     public async Task<IActionResult> GetFileVersions(Guid fileId)
     {
@@ -73,6 +81,7 @@ public class FileController : ControllerBase
         return Ok(versions);
     }
 
+    // Restores a file to a previous version
     [HttpPost("{fileId}/restore")]
     public async Task<IActionResult> RestoreVersion(Guid fileId, int VersionNumber)
     {
@@ -81,6 +90,7 @@ public class FileController : ControllerBase
         return Ok(fileDto);
     }
 
+    // Deletes a file or folder
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteFileOrFolder(Guid id)
     {
@@ -89,5 +99,6 @@ public class FileController : ControllerBase
         return NoContent();
     }
 
+    // Helper method to get the logged-in user’s ID from their authentication info
     private Guid GetUserId() => Guid.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? throw new InvalidOperationException("User ID not found."));
 }

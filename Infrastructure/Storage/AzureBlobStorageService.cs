@@ -1,5 +1,4 @@
 ﻿using Azure.Storage.Blobs;
-using Azure.Storage.Blobs.Models;
 using Domain.Entities;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
@@ -16,21 +15,30 @@ public class AzureBlobStorageService : IStorageService
         _logger = logger;
     }
 
+    // Uploads a file to Azure Blob Storage and returns its URL
     public async Task<string> UploadFileAsync(IFormFile file, string blobName)
     {
+        // Get or create the "files" container (a storage bucket) in Azure
         var containerClient = _blobServiceClient.GetBlobContainerClient("files");
         await containerClient.CreateIfNotExistsAsync();
 
+        // Set up a specific blob (file) in the container with the given name
         var blobClient = containerClient.GetBlobClient(blobName);
+
+        // Open the file’s data stream and upload it to Azure, overwriting if it already exists
         await using var stream = file.OpenReadStream();
         await blobClient.UploadAsync(stream, true);
 
         _logger.LogInformation("File uploaded to Azure Blob Storage: {BlobName}", blobName);
         return blobClient.Uri.ToString();
     }
+
+    // Uploads a specific file version to Azure Blob Storage and returns its URL
     public async Task<string> UploadVersionAsync(FileVersion version)
     {
         var containerClient = _blobServiceClient.GetBlobContainerClient("files");
+
+        // Create a unique blob name using the file ID, version number, and original name
         var blobName = $"{version.FileEntryId}/{version.VersionNumber}/{version.Name}";
         var blobClient = containerClient.GetBlobClient(blobName);
 
@@ -43,6 +51,7 @@ public class AzureBlobStorageService : IStorageService
         return blobClient.Uri.ToString();
     }
 
+    // Deletes a file from Azure Blob Storage using its path
     public async Task DeleteFileAsync(string path)
     {
         var uri = new Uri(path);

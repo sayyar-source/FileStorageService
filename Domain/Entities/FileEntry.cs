@@ -27,17 +27,6 @@ public class FileEntry:BaseEntity
         IsFolder = isFolder;
         Versions.Add(new FileVersion(Id, name, path, size, 1));
     }
-    public void Update(string name, string path, string contentType, long size)
-    {
-        if (IsFolder) throw new InvalidOperationException("Cannot update a folder.");
-        var currentVersion = Versions.Max(v => v.VersionNumber);
-        Versions.Add(new FileVersion(Id, Name!, Path!, Size, currentVersion + 1));
-        Name = name;
-        Path = path;
-        ContentType = contentType;
-        Size = size;
-        UpdatedAt = DateTime.UtcNow;
-    }
 
     public void RestoreVersion(int versionNumber, string path, string contentType, long size)
     {
