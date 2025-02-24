@@ -6,12 +6,12 @@ public class FileEntry:BaseEntity
     public string? ContentType { get;  set; }
     public long Size { get;  set; }
     public Guid OwnerId { get;  set; }
-    public User Owner { get;  set; }
+    public User? Owner { get;  set; }
     public Guid? ParentFolderId { get;  set; }
     public FileEntry? ParentFolder { get;  set; }
-    public List<FileEntry> Children { get;  set; } = new();
-    public List<SharedAccess> SharedAccesses { get;  set; } = new();
-    public List<FileVersion> Versions { get;  set; } = new();
+    public List<FileEntry?> Children { get;  set; } = new();
+    public List<SharedAccess?> SharedAccesses { get;  set; } = new();
+    public List<FileVersion?> Versions { get;  set; } = new();
     public bool IsFolder { get;  set; }
 
     private FileEntry() { } 

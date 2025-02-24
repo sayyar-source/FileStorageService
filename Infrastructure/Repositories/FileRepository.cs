@@ -13,7 +13,7 @@ public class FileRepository : IFileRepository
         _context = context ?? throw new ArgumentNullException(nameof(context));
     }
 
-    public async Task<FileEntry?> GetByIdAsync(Guid id)
+    public async Task<FileEntry> GetByIdAsync(Guid id)
     {
         try
         {
@@ -56,7 +56,7 @@ public class FileRepository : IFileRepository
         }
     }
 
-    public async Task<FileEntry?> GetByShareLinkAsync(string shareLink)
+    public async Task<FileEntry> GetByShareLinkAsync(string shareLink)
     {
         try
         {

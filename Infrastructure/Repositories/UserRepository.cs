@@ -15,12 +15,22 @@ public class UserRepository : IUserRepository
 
     public async Task<User> GetByIdAsync(Guid id)
     {
-        return await _context.Users.FindAsync(id);
+        var user = await _context.Users.FindAsync(id);
+        if (user == null)
+        {
+            throw new KeyNotFoundException($"User with ID {id} was not found.");
+        }
+        return user;
     }
 
     public async Task<User> GetByEmailAsync(string email)
     {
-        return await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
+        var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
+        if (user == null)
+        {
+            throw new KeyNotFoundException($"User with email {email} was not found.");
+        }
+        return user;
     }
 
     public async Task AddAsync(User user)
