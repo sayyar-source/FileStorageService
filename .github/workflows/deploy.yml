@@ -37,15 +37,15 @@ jobs:
       - name: Publish
         run: dotnet publish ./FileStorageService.sln -c Release -o ./publish
 
-      # # Deploy database schema to Azure SQL
-      # - name: Deploy database migrations
-      #   env:
-      #     SQL_CONNECTION_STRING: ${{ secrets.AZURE_SQL_CONNECTION_STRING }}
-      #   run: |
-      #     # Install Azure CLI
-      #     curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
-      #     # Apply migrations.sql
-      #     az sql db execute --resource-group your-resource-group --server your-sql-server --name FileStorageDb --file-path migrations.sql --connection-string "$SQL_CONNECTION_STRING"
+      # Deploy database schema to Azure SQL
+      - name: Deploy database migrations
+        env:
+          SQL_CONNECTION_STRING: ${{ secrets.AZURE_SQL_CONNECTION_STRING }}
+        run: |
+          # Install Azure CLI
+          curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
+          # Apply migrations.sql
+          az sql db execute --resource-group app --server filestorage2025 --name FileStorageDb --file-path migrations.sql --connection-string "$SQL_CONNECTION_STRING"
 
       # # Deploy to Azure App Service
       # - name: Deploy to Azure Web App
