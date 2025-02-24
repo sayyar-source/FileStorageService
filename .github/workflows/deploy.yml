@@ -39,23 +39,23 @@ jobs:
 
     # Deploy database schema to Azure SQL
       - name: Deploy database migrations
-       env:
-        SQL_CONNECTION_STRING: ${{ secrets.AZURE_SQL_CONNECTION_STRING }}
-      run: |
-    # Install Azure CLI
-    curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
+        env:
+         SQL_CONNECTION_STRING: ${{ secrets.AZURE_SQL_CONNECTION_STRING }}
+        run: |
+         # Install Azure CLI
+         curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
     
-    # Install SQL Server tools
-    sudo apt-get update
-    sudo apt-get install -y mssql-tools unixodbc-dev
+         # Install SQL Server tools
+          sudo apt-get update
+          sudo apt-get install -y mssql-tools unixodbc-dev
 
-    # Add SQL tools to PATH
-    echo 'export PATH="$PATH:/opt/mssql-tools/bin"' >> ~/.bashrc
-    source ~/.bashrc
+         # Add SQL tools to PATH
+         echo 'export PATH="$PATH:/opt/mssql-tools/bin"' >> ~/.bashrc
+         source ~/.bashrc
 
-    # Run migrations using EF Core CLI (if using EF)
-    dotnet tool install --global dotnet-ef
-    dotnet ef database update --connection "$SQL_CONNECTION_STRING"
+         # Run migrations using EF Core CLI (if using EF)
+          dotnet tool install --global dotnet-ef
+           dotnet ef database update --connection "$SQL_CONNECTION_STRING"
 
 
       - name: Deploy to Azure Web App
