@@ -40,7 +40,7 @@ jobs:
       # Restore dependencies
       - name: Restore dependencies
         run: dotnet restore ./FileStorageService.sln
-
+        
       # Build the solution
       - name: Build
         run: dotnet build ./FileStorageService.sln --configuration Release --no-restore
