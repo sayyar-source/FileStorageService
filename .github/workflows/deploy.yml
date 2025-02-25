@@ -21,21 +21,6 @@ jobs:
         with:
           dotnet-version: '9.0.x'
           
-      # Setup Node.js (for Azurite)
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-         node-version: '18'
-
-      # Install Azurite
-      - name: Install Azurite
-        run: npm install -g azurite
-
-      # Start Azurite in the background
-      - name: Start Azurite
-        run: |
-         azurite --silent & # Run silently in background
-         sleep 5 # Wait for Azurite to start
          
       # Restore dependencies
       - name: Restore dependencies
