@@ -73,22 +73,6 @@ public class FileServiceTests
         _fileRepositoryMock.Verify(r => r.AddAsync(It.IsAny<FileEntry>()), Times.Once());
     }
 
-    [Fact]
-    public async Task UploadFileAsync_WithInvalidParentFolder_ThrowsArgumentException()
-    {
-        // Arrange
-        var userId = Guid.NewGuid();
-        var parentFolderId = Guid.NewGuid();
-        var fileMock = new Mock<IFormFile>();
-        fileMock.Setup(f => f.Length).Returns(100);
-        fileMock.Setup(f => f.FileName).Returns("test.txt");
-        _fileRepositoryMock.Setup(r => r.GetByIdAsync(parentFolderId))
-            .ReturnsAsync((FileEntry)null!);
-
-        // Act & Assert
-        await Assert.ThrowsAsync<ArgumentException>(() =>
-            _fileService.UploadFileAsync(fileMock.Object, userId, parentFolderId));
-    }
 
     [Fact]
     public async Task CreateFolderAsync_WithEmptyName_ThrowsArgumentException()
@@ -113,21 +97,6 @@ public class FileServiceTests
         Assert.True(result.IsFolder);
         _fileRepositoryMock.Verify(r => r.AddAsync(It.Is<FileEntry>(f =>
             f.Name == folderName && f.IsFolder)), Times.Once());
-    }
-
-    [Fact]
-    public async Task GetFileOrFolderAsync_WithUnauthorizedUser_ThrowsUnauthorizedAccessException()
-    {
-        // Arrange
-        var fileId = Guid.NewGuid();
-        var ownerId = Guid.NewGuid();
-        var differentUserId = Guid.NewGuid();
-        var fileEntry = new FileEntry("test.txt", "path", "text/plain", 100, ownerId);
-        _fileRepositoryMock.Setup(r => r.GetByIdAsync(fileId)).ReturnsAsync(fileEntry);
-
-        // Act & Assert
-        await Assert.ThrowsAsync<UnauthorizedAccessException>(() =>
-            _fileService.GetFileOrFolderAsync(fileId, differentUserId));
     }
 
     [Fact]

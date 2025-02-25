@@ -9,9 +9,9 @@ public class FileEntry:BaseEntity
     public User? Owner { get;  set; }
     public Guid? ParentFolderId { get;  set; }
     public FileEntry? ParentFolder { get;  set; }
-    public List<FileEntry?> Children { get;  set; } = new();
-    public List<SharedAccess?> SharedAccesses { get;  set; } = new();
-    public List<FileVersion?> Versions { get;  set; } = new();
+    public List<FileEntry> Children { get;  set; } = new();
+    public List<SharedAccess> SharedAccesses { get;  set; } = new();
+    public List<FileVersion> Versions { get;  set; } = new();
     public bool IsFolder { get;  set; }
 
     private FileEntry() { } 
