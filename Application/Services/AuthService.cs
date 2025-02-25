@@ -59,22 +59,24 @@ public class AuthService : IAuthService
     }
 
 
-    public async Task RegisterAsync(string email, string password)
+    public async Task<Result<string>> RegisterAsync(string email, string password)
     {
         try
         {
             var existingUser = await _userRepository.GetByEmailAsync(email);
             if (existingUser != null)
-                throw new InvalidOperationException("User with this email already exists.");
+                return Result<string>.Failure("User with this email already exists.");
 
             var user = new User(email, password);
             await _userRepository.AddAsync(user);
             _logger.LogInformation("User {Email} registered successfully.", email);
+
+            return Result<string>.Success("User registered successfully.");
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error during registration for {Email}", email);
-            throw;
+            return Result<string>.Failure("An unexpected error occurred during registration.");
         }
     }
 

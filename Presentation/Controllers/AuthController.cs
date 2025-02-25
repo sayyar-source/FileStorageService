@@ -36,7 +36,12 @@ public class AuthController : ControllerBase
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
 
-        await _authService.RegisterAsync(request.Email, request.Password);
-        return Ok(new { Message = "User registered successfully." });
+        var result = await _authService.RegisterAsync(request.Email, request.Password);
+
+        if (!result.IsSuccess)
+            return BadRequest(new { Error = result.Error });
+
+        return Ok(new { Message = result.Data });
     }
+
 }
