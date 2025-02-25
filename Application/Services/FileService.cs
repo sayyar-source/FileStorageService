@@ -1,5 +1,6 @@
 ﻿using Application.DTOs;
 using Application.Interfaces;
+using Domain.Commons;
 using Domain.Entities;
 using Domain.Interfaces;
 using Infrastructure.Storage;
@@ -32,10 +33,11 @@ public class FileService : IFileService
     }
 
     // Uploads a file, either new or as an update to an existing one
-    public async Task<FileDto> UploadFileAsync(IFormFile file, Guid userId, Guid? parentFolderId, Guid? fileEntryId = null)
+    public async Task<Result<FileDto>> UploadFileAsync(IFormFile file, Guid userId, Guid? parentFolderId, Guid? fileEntryId = null)
     {
-        // Make sure we have a valid file to upload
-        if (file == null || file.Length == 0) throw new ArgumentException("File cannot be empty.", nameof(file));
+        // Validate the file
+        if (file == null || file.Length == 0)
+            return Result<FileDto>.Failure("File cannot be empty.");
 
         try
         {
@@ -44,166 +46,183 @@ public class FileService : IFileService
             var blobName = string.IsNullOrEmpty(folderPath) ? file.FileName : $"{folderPath}/{file.FileName}";
             var path = await _storageService.UploadFileAsync(file, blobName);
             FileEntry existingFile = null!;
-            FileEntry fileEntry = new FileEntry(file.FileName, path, file.ContentType, file.Length, userId);
+            var fileEntry = new FileEntry(file.FileName, path, file.ContentType, file.Length, userId);
 
             // If there’s a parent folder, check it exists and belongs to the user
             if (parentFolderId.HasValue)
             {
                 var parentFolder = await _fileRepository.GetByIdAsync(parentFolderId.Value);
                 if (parentFolder == null || !parentFolder.IsFolder)
-                    throw new ArgumentException("Parent folder does not exist or is not a folder.");
+                    return Result<FileDto>.Failure("Parent folder does not exist or is not a folder.");
                 if (parentFolder.OwnerId != userId)
-                    throw new UnauthorizedAccessException("User does not own the parent folder.");
+                    return Result<FileDto>.Failure("User does not own the parent folder.");
                 fileEntry.ParentFolderId = parentFolderId;
             }
+
             // If updating an existing file
             if (fileEntryId.HasValue)
             {
                 existingFile = await _fileRepository.GetByIdAsync(fileEntryId.Value);
                 if (existingFile == null || existingFile.OwnerId != userId || existingFile.IsFolder)
-                    throw new UnauthorizedAccessException("User does not own the file or file is a folder.");
+                    return Result<FileDto>.Failure("User does not own the file or file is a folder.");
 
                 // Update the existing file’s details with the new file’s info
                 existingFile.Name = fileEntry.Name;
                 existingFile.Path = fileEntry.Path;
                 existingFile.ContentType = fileEntry.ContentType;
                 existingFile.Size = fileEntry.Size;
-                existingFile.UpdatedAt = fileEntry.UpdatedAt;
+                existingFile.UpdatedAt = DateTime.UtcNow; // Update the timestamp
                 var currentVersion = existingFile.Versions.Max(v => v.VersionNumber);
                 await _fileRepository.UpdateAsync(existingFile);
                 var fileVersion = new FileVersion(existingFile.Id, existingFile.Name!, existingFile.Path!, existingFile.Size, currentVersion + 1);
                 await _fileVersionRepository.AddAsync(fileVersion);
 
-                _logger.LogInformation("File updated: {FileId} to {Path} by user {UserId}", existingFile!.Id, path, userId);
-                return MapToDto(existingFile);// Return the updated file details
+                _logger.LogInformation("File updated: {FileId} to {Path} by user {UserId}", existingFile.Id, path, userId);
+                return Result<FileDto>.Success(MapToDto(existingFile)); // Return the updated file details
             }
+
             // If it’s a new file, save it and log the action
             await _fileRepository.AddAsync(fileEntry);
-            _logger.LogInformation("File added: {FileId} to {Path} by user {UserId}", fileEntry!.Id, path, userId);
-            return MapToDto(fileEntry);
+            _logger.LogInformation("File added: {FileId} to {Path} by user {UserId}", fileEntry.Id, path, userId);
+            return Result<FileDto>.Success(MapToDto(fileEntry));
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to upload file for user {UserId}. File: {FileName}, ParentFolderId: {ParentFolderId}, FileEntryId: {FileEntryId}",
                 userId, file?.FileName, parentFolderId, fileEntryId);
-            throw new InvalidOperationException("An error occurred while uploading the file.", ex);
+            return Result<FileDto>.Failure("An error occurred while uploading the file.");
         }
     }
 
+
     // Creates a new folder for organizing files
-    public async Task<FileDto> CreateFolderAsync(string name, Guid userId, Guid? parentFolderId)
+    public async Task<Result<FileDto>> CreateFolderAsync(string name, Guid userId, Guid? parentFolderId)
     {
         // Ensure the folder has a name
-        if (string.IsNullOrEmpty(name)) throw new ArgumentException("Folder name cannot be empty.", nameof(name));
+        if (string.IsNullOrEmpty(name))
+            return Result<FileDto>.Failure("Folder name cannot be empty.");
+
         try
         {
             FileEntry parentFolder = null!;
+
             // Check the parent folder if one is specified
             if (parentFolderId.HasValue)
             {
                 parentFolder = await _fileRepository.GetByIdAsync(parentFolderId.Value);
                 if (parentFolder == null || !parentFolder.IsFolder)
-                    throw new ArgumentException("Parent folder does not exist or is not a folder.");
+                    return Result<FileDto>.Failure("Parent folder does not exist or is not a folder.");
                 if (parentFolder.OwnerId != userId)
-                    throw new UnauthorizedAccessException("User does not own the parent folder.");
+                    return Result<FileDto>.Failure("User does not own the parent folder.");
             }
 
             // Create and save the new folder
             var folder = new FileEntry(name, null!, null!, 0, userId, parentFolderId, true);
             if (parentFolder != null)
-                parentFolder.Children.Add(folder);// Link it to the parent
+                parentFolder.Children.Add(folder); // Link it to the parent
 
             await _fileRepository.AddAsync(folder);
             _logger.LogInformation("Folder created: {FolderId} by user {UserId}", folder.Id, userId);
-            return MapToDto(folder);
+            return Result<FileDto>.Success(MapToDto(folder));
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to create folder for user {UserId}. Name: {Name}, ParentFolderId: {ParentFolderId}",
                 userId, name, parentFolderId);
-            throw new InvalidOperationException("An error occurred while creating the folder.", ex);
+            return Result<FileDto>.Failure("An error occurred while creating the folder.");
         }
     }
 
+
     // Gets details about a file or folder, including its contents if it’s a folder
-    public async Task<FileDto> GetFileOrFolderAsync(Guid id, Guid userId)
+    public async Task<Result<FileDto>> GetFileOrFolderAsync(Guid id, Guid userId)
     {
         try
         {
             var entry = await _fileRepository.GetByIdAsync(id);
+
             // Check if the user owns it or has shared access
             if (entry == null || (entry.OwnerId != userId && !entry.SharedAccesses.Any(sa => sa.UserId == userId)))
-                throw new UnauthorizedAccessException("User does not have access to this file or folder.");
+                return Result<FileDto>.Failure("User does not have access to this file or folder.");
 
             var dto = MapToDto(entry);
+
             // If it’s a folder, include its children
             if (entry.IsFolder)
                 dto.Children = (await _fileRepository.GetChildrenAsync(id, userId)).Select(MapToDto).ToList();
 
-            return dto;
+            return Result<FileDto>.Success(dto);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to retrieve file or folder {Id} for user {UserId}", id, userId);
-            throw new InvalidOperationException("An error occurred while retrieving the file or folder.", ex);
+            return Result<FileDto>.Failure("An error occurred while retrieving the file or folder.");
         }
     }
 
+
     // Accesses a file or folder via a share link
-    public async Task<FileDto> GetByShareLinkAsync(string shareLink, Guid userId)
+    public async Task<Result<FileDto>> GetByShareLinkAsync(string shareLink, Guid userId)
     {
         try
         {
             var entry = await _fileRepository.GetByShareLinkAsync(shareLink);
+
             // Verify the user has access through the share link
             if (entry == null || !entry.SharedAccesses.Any(sa => sa.UserId == userId && sa.ShareLink == shareLink))
-                throw new UnauthorizedAccessException("Invalid share link or no access.");
+            {
+                return Result<FileDto>.Failure("Invalid share link or no access.");
+            }
 
             var dto = MapToDto(entry);
-            if (entry.IsFolder)
-                dto.Children = (await _fileRepository.GetChildrenAsync(entry.Id, userId)).Select(MapToDto).ToList();
 
-            return dto;
+            // If it’s a folder, include its children
+            if (entry.IsFolder)
+            {
+                dto.Children = (await _fileRepository.GetChildrenAsync(entry.Id, userId)).Select(MapToDto).ToList();
+            }
+
+            return Result<FileDto>.Success(dto);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to retrieve file or folder by share link {ShareLink} for user {UserId}", shareLink, userId);
-            throw new InvalidOperationException("An error occurred while retrieving the file or folder by share link.", ex);
+            _logger.LogError(ex, "Failed to retrieve entry by share link {ShareLink} for user {UserId}", shareLink, userId);
+            return Result<FileDto>.Failure("An error occurred while retrieving the file or folder by share link.");
         }
     }
 
     // Shares a file or folder with another user
-    public async Task<ShareResponse> ShareFileOrFolderAsync(Guid id, Guid ownerId, Guid targetUserId, AccessLevel accessLevel)
+    public async Task<Result<ShareResponse>> ShareFileOrFolderAsync(Guid id, Guid ownerId, Guid targetUserId, AccessLevel accessLevel)
     {
         try
         {
             var entry = await _fileRepository.GetByIdAsync(id);
             if (entry == null || entry.OwnerId != ownerId)
-                throw new UnauthorizedAccessException("User does not own this file or folder.");
+                return Result<ShareResponse>.Failure("User does not own this file or folder.");
 
             var targetUser = await _userRepository.GetByIdAsync(targetUserId);
-            // Check the target user exists
+            // Check if the target user exists
             if (targetUser == null)
-                throw new ArgumentException("Target user does not exist.", nameof(targetUserId));
+                return Result<ShareResponse>.Failure("Target user does not exist.");
 
             // Create and save the sharing permission
             var sharedAccess = new SharedAccess(entry.Id, targetUserId, accessLevel);
             await _sharedAccessRepository.AddAsync(sharedAccess);
 
-            _logger.LogInformation("{Type} {Id} shared with user {TargetUserId} via link {ShareLink} by {OwnerId}",
-                entry.IsFolder ? "Folder" : "File", id, targetUserId, sharedAccess.ShareLink, ownerId);
+            _logger.LogInformation("{Type} {Id} shared with user {TargetUserId} by {OwnerId}",
+                entry.IsFolder ? "Folder" : "File", id, targetUserId, ownerId);
 
-            return new ShareResponse { ShareLink = sharedAccess.ShareLink! };
+            return Result<ShareResponse>.Success(new ShareResponse { ShareLink = sharedAccess.ShareLink! });
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to share file or folder {Id} from owner {OwnerId} to user {TargetUserId}", id, ownerId, targetUserId);
-            throw new InvalidOperationException("An error occurred while sharing the file or folder.", ex);
+            return Result<ShareResponse>.Failure("An error occurred while sharing the file or folder.");
         }
     }
 
     // Lists all items inside a folder (or root if no folder is specified)
-    public async Task<List<FileDto>> ListFolderContentsAsync(Guid? folderId, Guid userId)
+    public async Task<Result<List<FileDto>>> ListFolderContentsAsync(Guid? folderId, Guid userId)
     {
         try
         {
@@ -211,32 +230,34 @@ public class FileService : IFileService
             {
                 var folder = await _fileRepository.GetByIdAsync(folderId.Value);
                 if (folder == null || !folder.IsFolder)
-                    throw new ArgumentException("Specified ID does not correspond to a folder.");
+                    return Result<List<FileDto>>.Failure("Specified ID does not correspond to a folder.");
+
                 if (folder.OwnerId != userId && !folder.SharedAccesses.Any(sa => sa.UserId == userId))
-                    throw new UnauthorizedAccessException("User does not have access to this folder.");
+                    return Result<List<FileDto>>.Failure("User does not have access to this folder.");
             }
 
             var contents = await _fileRepository.GetChildrenAsync(folderId, userId);
-            return contents.Select(MapToDto).ToList();
+            var fileDtos = contents.Select(MapToDto).ToList();
+            return Result<List<FileDto>>.Success(fileDtos);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to list contents of folder {FolderId} for user {UserId}", folderId, userId);
-            throw new InvalidOperationException("An error occurred while listing folder contents.", ex);
+            return Result<List<FileDto>>.Failure("An error occurred while listing folder contents.");
         }
     }
 
     // Retrieves all versions of a file
-    public async Task<List<FileVersionDto>> GetFileVersionsAsync(Guid fileId, Guid userId)
+    public async Task<Result<List<FileVersionDto>>> GetFileVersionsAsync(Guid fileId, Guid userId)
     {
         try
         {
             var file = await _fileRepository.GetByIdAsync(fileId);
             if (file == null || file.OwnerId != userId || file.IsFolder)
-                throw new UnauthorizedAccessException();
+                return Result<List<FileVersionDto>>.Failure("User does not have access to this file or it is a folder.");
 
             var versions = await _fileRepository.GetVersionsAsync(fileId);
-            return versions.Select(v => new FileVersionDto
+            var fileVersionDtos = versions.Select(v => new FileVersionDto
             {
                 FileVersionId = v.FileVersionId,
                 FileEntryId = v.FileEntryId,
@@ -245,40 +266,42 @@ public class FileService : IFileService
                 VersionNumber = v.VersionNumber,
                 CreatedAt = v.CreatedAt
             }).ToList();
+
+            return Result<List<FileVersionDto>>.Success(fileVersionDtos);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to retrieve versions for file {FileId} for user {UserId}", fileId, userId);
-            throw new InvalidOperationException("An error occurred while retrieving file versions.", ex);
+            return Result<List<FileVersionDto>>.Failure("An error occurred while retrieving file versions.");
         }
     }
 
     // Restores a file to a previous version
-    public async Task<FileDto> RestoreFileVersionAsync(Guid fileId, Guid userId, int versionNumber)
+    public async Task<Result<FileDto>> RestoreFileVersionAsync(Guid fileId, Guid userId, int versionNumber)
     {
         try
         {
             var file = await _fileRepository.GetByIdAsync(fileId);
             if (file == null || file.OwnerId != userId || file.IsFolder)
-                throw new UnauthorizedAccessException();
+                return Result<FileDto>.Failure("User does not have access to this file or it is a folder.");
 
             // Find the version to restore
             var version = (await _fileRepository.GetVersionsAsync(fileId))
                 .FirstOrDefault(v => v.VersionNumber == versionNumber);
             if (version == null)
-                throw new KeyNotFoundException("Version not found.");
+                return Result<FileDto>.Failure("Version not found.");
 
-            // With Azure,Upload the version as a new blob and update the file
+            // Upload the version as a new blob and update the file
             var restoredFilePath = await _storageService.UploadVersionAsync(version);
             file.RestoreVersion(versionNumber, restoredFilePath, version.FilePath!.Split('.').Last(), version.Size);
             await _fileRepository.UpdateAsync(file);
 
-            return MapToDto(file);
+            return Result<FileDto>.Success(MapToDto(file));
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to restore version {VersionNumber} for file {FileId} by user {UserId}", versionNumber, fileId, userId);
-            throw new InvalidOperationException("An error occurred while restoring the file version.", ex);
+            return Result<FileDto>.Failure("An error occurred while restoring the file version.");
         }
     }
 

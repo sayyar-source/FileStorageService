@@ -22,8 +22,13 @@ public class FileController : ControllerBase
     public async Task<IActionResult> UploadFile(IFormFile file, [FromQuery] Guid? parentFolderId, [FromQuery] Guid? fileEntryId)
     {
         var userId = GetUserId();
-        var fileDto = await _fileService.UploadFileAsync(file, userId, parentFolderId, fileEntryId);
-        return Ok(fileDto);
+        var result = await _fileService.UploadFileAsync(file, userId, parentFolderId, fileEntryId);
+
+        if (!result.IsSuccess)
+        {
+            return BadRequest(new { message = result.Error });
+        }
+        return Ok(result.Data);
     }
 
     // Creates a new folder
@@ -31,8 +36,13 @@ public class FileController : ControllerBase
     public async Task<IActionResult> CreateFolder([FromBody] string name, [FromQuery] Guid? parentFolderId)
     {
         var userId = GetUserId();
-        var folderDto = await _fileService.CreateFolderAsync(name, userId, parentFolderId);
-        return Ok(folderDto);
+        var result = await _fileService.CreateFolderAsync(name, userId, parentFolderId);
+
+        if (!result.IsSuccess)
+        {
+            return BadRequest(new { message = result.Error });
+        }
+        return Ok(result.Data);
     }
 
     // Gets details about a specific file or folder
@@ -40,17 +50,31 @@ public class FileController : ControllerBase
     public async Task<IActionResult> GetFileOrFolder(Guid id)
     {
         var userId = GetUserId();
-        var entry = await _fileService.GetFileOrFolderAsync(id, userId);
-        return Ok(entry);
+        var result = await _fileService.GetFileOrFolderAsync(id, userId);
+
+        if (!result.IsSuccess)
+        {
+            if (result.Error == "Unauthorized access")
+            {
+                return Unauthorized(new { message = result.Error });
+            }
+            return NotFound(new { message = result.Error });
+        }
+        return Ok(result.Data);
     }
 
     // Accesses a file or folder using a share link
     [HttpGet("share/{shareLink}")]
     public async Task<IActionResult> GetByShareLink(string shareLink)
     {
-        var userId = GetUserId();
-        var entry = await _fileService.GetByShareLinkAsync(shareLink, userId);
-        return Ok(entry);
+        var userId = GetUserId(); 
+        var result = await _fileService.GetByShareLinkAsync(shareLink, userId);
+
+        if (!result.IsSuccess)
+        {
+            return Unauthorized(new { message = result.Error });
+        }
+        return Ok(result.Data);
     }
 
     // Shares a file or folder with another user
@@ -59,8 +83,18 @@ public class FileController : ControllerBase
     {
         // Gets the logged-in user’s ID (the owner)
         var ownerId = GetUserId();
-        var response = await _fileService.ShareFileOrFolderAsync(id, ownerId, targetUserId, accessLevel);
-        return Ok(response);
+        var result = await _fileService.ShareFileOrFolderAsync(id, ownerId, targetUserId, accessLevel);
+
+        if (!result.IsSuccess)
+        {
+            if (result.Error == "User does not own this file or folder.")
+            {
+                return Unauthorized(new { message = result.Error });
+            }
+
+            return BadRequest(new { message = result.Error });
+        }
+        return Ok(result.Data);
     }
 
     // Lists all files and folders inside a folder
@@ -68,8 +102,13 @@ public class FileController : ControllerBase
     public async Task<IActionResult> ListFolderContents([FromQuery] Guid? folderId)
     {
         var userId = GetUserId();
-        var contents = await _fileService.ListFolderContentsAsync(folderId, userId);
-        return Ok(contents);
+        var result = await _fileService.ListFolderContentsAsync(folderId, userId);
+
+        if (result == null)
+        {
+            return NotFound(new { message = "No contents found for the specified folder." });
+        }
+        return Ok(result);
     }
 
     // Shows all versions of a file
@@ -77,8 +116,14 @@ public class FileController : ControllerBase
     public async Task<IActionResult> GetFileVersions(Guid fileId)
     {
         var userId = GetUserId();
-        var versions = await _fileService.GetFileVersionsAsync(fileId, userId);
-        return Ok(versions);
+        var result = await _fileService.GetFileVersionsAsync(fileId, userId);
+
+        if (result == null)
+        {
+            return NotFound(new { message = "No versions found for the specified file." });
+        }
+
+        return Ok(result);
     }
 
     // Restores a file to a previous version
@@ -86,8 +131,14 @@ public class FileController : ControllerBase
     public async Task<IActionResult> RestoreVersion(Guid fileId, int VersionNumber)
     {
         var userId = GetUserId();
-        var fileDto = await _fileService.RestoreFileVersionAsync(fileId, userId, VersionNumber);
-        return Ok(fileDto);
+        var result = await _fileService.RestoreFileVersionAsync(fileId, userId, VersionNumber);
+
+        if (result == null)
+        {
+            return NotFound(new { message = "Version not found or restoration failed." });
+        }
+
+        return Ok(result);
     }
 
     // Deletes a file or folder

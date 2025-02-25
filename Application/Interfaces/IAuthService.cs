@@ -1,8 +1,9 @@
 ﻿using Application.DTOs;
+using Domain.Commons;
 
 namespace Application.Interfaces;
 public interface IAuthService
 {
-    Task<LoginResponse> LoginAsync(LoginRequest request);
+    Task<Result<LoginResponse>> LoginAsync(LoginRequest request);
     Task RegisterAsync(string email, string password);
 }

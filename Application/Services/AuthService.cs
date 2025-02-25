@@ -1,5 +1,6 @@
 ﻿using Application.DTOs;
 using Application.Interfaces;
+using Domain.Commons;
 using Domain.Entities;
 using Domain.Interfaces;
 using Microsoft.Extensions.Configuration;
@@ -23,32 +24,40 @@ public class AuthService : IAuthService
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
-    public async Task<LoginResponse> LoginAsync(LoginRequest request)
+    public async Task<Result<LoginResponse>> LoginAsync(LoginRequest request)
     {
         try
         {
+            // Validate input
             if (string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Password))
-                throw new ArgumentException("Email and password are required.");
+            {
+                return Result<LoginResponse>.Failure("Email and password are required.");
+            }
 
+            // Retrieve the user
             var user = await _userRepository.GetByEmailAsync(request.Email);
             if (user == null || !user.VerifyPassword(request.Password))
-                throw new UnauthorizedAccessException("Invalid email or password.");
+            {
+                return Result<LoginResponse>.Failure("Invalid email or password.");
+            }
 
+            // Generate token
             var token = GenerateJwtToken(user);
             _logger.LogInformation("User {Email} logged in successfully.", request.Email);
 
-            return new LoginResponse
+            return Result<LoginResponse>.Success(new LoginResponse
             {
                 Token = token,
                 UserId = user.Id
-            };
+            });
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error during login for {Email}", request.Email);
-            throw;
+            return Result<LoginResponse>.Failure("An error occurred during login.");
         }
     }
+
 
     public async Task RegisterAsync(string email, string password)
     {

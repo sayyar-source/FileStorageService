@@ -20,8 +20,14 @@ public class AuthController : ControllerBase
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
 
-        var response = await _authService.LoginAsync(request);
-        return Ok(response);
+        var result = await _authService.LoginAsync(request);
+
+        if (!result.IsSuccess)
+        {
+            return Unauthorized(result.Error);
+        }
+
+        return Ok(result.Data);
     }
 
     [HttpPost("register")]

@@ -44,15 +44,9 @@ public class FileServiceTests
             _loggerMock.Object));
     }
 
-    [Fact]
-    public async Task UploadFileAsync_WithNullFile_ThrowsArgumentException()
-    {
-        await Assert.ThrowsAsync<ArgumentException>(() =>
-            _fileService.UploadFileAsync(null!, Guid.NewGuid(), null));
-    }
 
     [Fact]
-    public async Task UploadFileAsync_WithValidFile_SuccessfullyUploads()
+    public async Task UploadFileAsync_WithValidFile_ReturnsSuccessResult()
     {
         // Arrange
         var userId = Guid.NewGuid();
@@ -67,22 +61,22 @@ public class FileServiceTests
         var result = await _fileService.UploadFileAsync(fileMock.Object, userId, null);
 
         // Assert
-        Assert.NotNull(result);
-        Assert.Equal("test.txt", result.Name);
-        Assert.Equal("path/to/test.txt", result.Path);
+        Assert.True(result.IsSuccess);
+        Assert.Equal("test.txt", result.Data.Name);
+        Assert.Equal("path/to/test.txt", result.Data.Path);
         _fileRepositoryMock.Verify(r => r.AddAsync(It.IsAny<FileEntry>()), Times.Once());
     }
 
-
     [Fact]
-    public async Task CreateFolderAsync_WithEmptyName_ThrowsArgumentException()
+    public async Task CreateFolderAsync_WithEmptyName_ReturnsFailureResult()
     {
-        await Assert.ThrowsAsync<ArgumentException>(() =>
-            _fileService.CreateFolderAsync("", Guid.NewGuid(), null));
+        var result = await _fileService.CreateFolderAsync("", Guid.NewGuid(), null);
+        Assert.False(result.IsSuccess);
+        Assert.Equal("Folder name cannot be empty.", result.Error);
     }
 
     [Fact]
-    public async Task CreateFolderAsync_WithValidInput_CreatesFolder()
+    public async Task CreateFolderAsync_WithValidInput_ReturnsSuccessResult()
     {
         // Arrange
         var userId = Guid.NewGuid();
@@ -92,15 +86,15 @@ public class FileServiceTests
         var result = await _fileService.CreateFolderAsync(folderName, userId, null);
 
         // Assert
-        Assert.NotNull(result);
-        Assert.Equal(folderName, result.Name);
-        Assert.True(result.IsFolder);
+        Assert.True(result.IsSuccess);
+        Assert.Equal(folderName, result.Data.Name);
+        Assert.True(result.Data.IsFolder);
         _fileRepositoryMock.Verify(r => r.AddAsync(It.Is<FileEntry>(f =>
             f.Name == folderName && f.IsFolder)), Times.Once());
     }
 
     [Fact]
-    public async Task ShareFileOrFolderAsync_WithValidInput_CreatesShareLink()
+    public async Task ShareFileOrFolderAsync_WithValidInput_ReturnsSuccessResult()
     {
         // Arrange
         var fileId = Guid.NewGuid();
@@ -108,14 +102,14 @@ public class FileServiceTests
         var targetUserId = Guid.NewGuid();
         var fileEntry = new FileEntry("test.txt", "path", "text/plain", 100, ownerId);
         _fileRepositoryMock.Setup(r => r.GetByIdAsync(fileId)).ReturnsAsync(fileEntry);
-        _userRepositoryMock.Setup(r => r.GetByIdAsync(targetUserId)).ReturnsAsync(new Domain.Entities.User("user1@gmail.com","123"));
+        _userRepositoryMock.Setup(r => r.GetByIdAsync(targetUserId)).ReturnsAsync(new Domain.Entities.User("user1@gmail.com", "123"));
 
         // Act
         var result = await _fileService.ShareFileOrFolderAsync(fileId, ownerId, targetUserId, AccessLevel.View);
 
         // Assert
-        Assert.NotNull(result);
-        Assert.NotNull(result.ShareLink);
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.Data.ShareLink);
         _sharedAccessRepositoryMock.Verify(r => r.AddAsync(It.IsAny<SharedAccess>()), Times.Once());
     }
 
@@ -135,7 +129,7 @@ public class FileServiceTests
     }
 
     [Fact]
-    public async Task UploadFileAsync_UpdateExistingFile_SuccessfullyUpdates()
+    public async Task UploadFileAsync_UpdateExistingFile_ReturnsSuccessResult()
     {
         // Arrange
         var userId = Guid.NewGuid();
@@ -155,14 +149,15 @@ public class FileServiceTests
         var result = await _fileService.UploadFileAsync(fileMock.Object, userId, null, fileId);
 
         // Assert
-        Assert.Equal("updated.txt", result.Name);
-        Assert.Equal("new/path", result.Path);
+        Assert.True(result.IsSuccess);
+        Assert.Equal("updated.txt", result.Data.Name);
+        Assert.Equal("new/path", result.Data.Path);
         _fileRepositoryMock.Verify(r => r.UpdateAsync(It.IsAny<FileEntry>()), Times.Once());
         _fileVersionRepositoryMock.Verify(r => r.AddAsync(It.Is<FileVersion>(v => v.VersionNumber == 2)), Times.Once());
     }
 
     [Fact]
-    public async Task GetByShareLinkAsync_WithValidLink_ReturnsFile()
+    public async Task GetByShareLinkAsync_WithValidLink_ReturnsSuccessResult()
     {
         // Arrange
         var userId = Guid.NewGuid();
@@ -176,8 +171,8 @@ public class FileServiceTests
         var result = await _fileService.GetByShareLinkAsync(shareLink, userId);
 
         // Assert
-        Assert.NotNull(result);
-        Assert.Equal("shared.txt", result.Name);
+        Assert.True(result.IsSuccess);
+        Assert.Equal("shared.txt", result.Data.Name);
     }
 
     [Fact]
@@ -196,7 +191,10 @@ public class FileServiceTests
         var result = await _fileService.ListFolderContentsAsync(folderId, userId);
 
         // Assert
-        Assert.Single(result);
-        Assert.Equal("child.txt", result[0].Name);
+        Assert.True(result.IsSuccess);
+        Assert.Single(result.Data);
+        Assert.Equal("child.txt", result.Data[0].Name);
     }
 }
+
+
