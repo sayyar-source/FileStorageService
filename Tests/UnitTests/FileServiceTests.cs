@@ -125,7 +125,7 @@ public class FileServiceTests
         // Arrange
         var folderId = Guid.NewGuid();
         var userId = Guid.NewGuid();
-        var folder = new FileEntry("folder", null, null, 0, userId, null, true);
+        var folder = new FileEntry("folder", null!, null!, 0, userId, null, true);
         folder.Children.Add(new FileEntry("child", "path", "text/plain", 100, userId));
         _fileRepositoryMock.Setup(r => r.GetByIdAsync(folderId)).ReturnsAsync(folder);
 
@@ -186,7 +186,7 @@ public class FileServiceTests
         // Arrange
         var userId = Guid.NewGuid();
         var folderId = Guid.NewGuid();
-        var folder = new FileEntry("folder", null, null, 0, userId, null, true);
+        var folder = new FileEntry("folder", null!, null!, 0, userId, null, true);
         var childFile = new FileEntry("child.txt", "path", "text/plain", 100, userId);
         _fileRepositoryMock.Setup(r => r.GetByIdAsync(folderId)).ReturnsAsync(folder);
         _fileRepositoryMock.Setup(r => r.GetChildrenAsync(folderId, userId))

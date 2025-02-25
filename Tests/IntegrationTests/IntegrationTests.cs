@@ -80,7 +80,7 @@ public class FileServiceIntegrationTests : IClassFixture<IntegrationTestFixture>
         var userId = Guid.NewGuid();
         var parentFolderId = Guid.NewGuid();
         var user = new User("testuser@gmail.com", "password123") { Id = userId };
-        var parentFolder = new FileEntry("parent", null, null, 0, userId, null, true) { Id = parentFolderId };
+        var parentFolder = new FileEntry("parent", null!, null!, 0, userId, null, true) { Id = parentFolderId };
         user.Files.Add(parentFolder);
         await _dbContext.Users.AddAsync(user);
         await _dbContext.SaveChangesAsync();
@@ -116,7 +116,7 @@ public class FileServiceIntegrationTests : IClassFixture<IntegrationTestFixture>
 
         // Act
         var shareResponse = await _fileService.ShareFileOrFolderAsync(fileId, ownerId, targetUserId, AccessLevel.View);
-        var accessedFile = await _fileService.GetByShareLinkAsync(shareResponse.ShareLink, targetUserId);
+        var accessedFile = await _fileService.GetByShareLinkAsync(shareResponse.ShareLink!, targetUserId);
 
         // Assert
         Assert.NotNull(shareResponse.ShareLink);

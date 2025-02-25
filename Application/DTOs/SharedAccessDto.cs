@@ -7,5 +7,5 @@ public class SharedAccessDto
     public Guid FileEntryId { get; set; }
     public Guid UserId { get; set; }
     public AccessLevel AccessLevel { get; set; }
-    public string ShareLink { get; set; }
+    public string? ShareLink { get; set; }
 }
