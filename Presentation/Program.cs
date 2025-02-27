@@ -93,18 +93,18 @@ var app = builder.Build();
     await dbContext.Database.MigrateAsync();
 //}
 // Seed data for Users
-//using (var scopeSeed = app.Services.CreateScope())
-//{
-//    var context = scopeSeed.ServiceProvider.GetRequiredService<AppDbContext>();
-//    if (!context.Users.Any())
-//    {
-//        context.Users.AddRange(
-//            new User("user1@gmail.com", "123"),
-//            new User("user2@gmail.com", "123")
-//        );
-//        await context.SaveChangesAsync();
-//    }
-//}
+using (var scopeSeed = app.Services.CreateScope())
+{
+    var context = scopeSeed.ServiceProvider.GetRequiredService<AppDbContext>();
+    if (!context.Users.Any())
+    {
+        context.Users.AddRange(
+            new User("user1@gmail.com", "123"),
+            new User("user2@gmail.com", "123")
+        );
+        await context.SaveChangesAsync();
+    }
+}
 app.UseSwagger();
 app.UseSwaggerUI();
 
