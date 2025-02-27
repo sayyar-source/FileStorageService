@@ -19,7 +19,7 @@ public class AppDbContext : DbContext
 
         modelBuilder.Entity<FileEntry>()
             .HasOne(f => f.Owner)
-            .WithMany(u => u.Files)
+            .WithMany(u => u.Files!)
             .HasForeignKey(f => f.OwnerId)
             .OnDelete(DeleteBehavior.Cascade);
 
@@ -37,7 +37,7 @@ public class AppDbContext : DbContext
 
         modelBuilder.Entity<SharedAccess>()
             .HasOne(sa => sa.User)
-            .WithMany(u => u.SharedAccesses)
+            .WithMany(u => u.SharedAccesses!)
             .HasForeignKey(sa => sa.UserId)
             .OnDelete(DeleteBehavior.Restrict);
 

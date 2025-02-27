@@ -86,16 +86,16 @@ builder.Services.AddScoped<IStorageService>(sp =>
 
 var app = builder.Build();
 // Apply migrations on startup (optional for local dev, remove in production if using CI/CD migrations)
-if (app.Environment.IsDevelopment())
-{
+//if (app.Environment.IsDevelopment())
+//{
     using var scope = app.Services.CreateScope();
     var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     await dbContext.Database.MigrateAsync();
-}
+//}
 // Seed data for Users
-using (var scope = app.Services.CreateScope())
+using (var scopeSeed = app.Services.CreateScope())
 {
-    var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    var context = scopeSeed.ServiceProvider.GetRequiredService<AppDbContext>();
     if (!context.Users.Any())
     {
         context.Users.AddRange(
