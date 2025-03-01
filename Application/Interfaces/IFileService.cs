@@ -14,5 +14,5 @@ public interface IFileService
     Task<Result<List<FileDto>>> ListFolderContentsAsync(Guid? folderId, Guid userId);
     Task<Result<List<FileVersionDto>>> GetFileVersionsAsync(Guid fileId, Guid userId);
     Task<Result<FileDto>> RestoreFileVersionAsync(Guid fileId, Guid userId, int versionNumber);
-    Task DeleteFileOrFolderAsync(Guid id, Guid userId);
+    Task<Result<string>> DeleteFileOrFolderAsync(Guid id, Guid userId);
 }

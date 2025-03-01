@@ -56,7 +56,7 @@ public class AzureBlobStorageService : IStorageService
     {
         var uri = new Uri(path);
         var blobClient = _blobServiceClient.GetBlobContainerClient("files").GetBlobClient(Path.GetFileName(uri.LocalPath));
-        await blobClient.DeleteIfExistsAsync();
+        var result = await blobClient.DeleteIfExistsAsync();
         _logger.LogInformation("File deleted from Azure Blob Storage: {Path}", path);
     }
 }

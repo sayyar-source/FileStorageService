@@ -146,8 +146,12 @@ public class FileController : ControllerBase
     public async Task<IActionResult> DeleteFileOrFolder(Guid id)
     {
         var userId = GetUserId();
-        await _fileService.DeleteFileOrFolderAsync(id, userId);
-        return NoContent();
+        var result = await _fileService.DeleteFileOrFolderAsync(id, userId);
+
+        if (!result.IsSuccess)
+            return BadRequest(new { Error = result.Error });
+
+        return Ok(new { Message = result.Data });
     }
 
     // Helper method to get the logged-in user’s ID from their authentication info

@@ -306,16 +306,16 @@ public class FileService : IFileService
     }
 
     // Deletes a file or folder
-    public async Task DeleteFileOrFolderAsync(Guid id, Guid userId)
+    public async Task<Result<string>> DeleteFileOrFolderAsync(Guid id, Guid userId)
     {
         try
         {
             var entry = await _fileRepository.GetByIdAsync(id);
             if (entry == null || entry.OwnerId != userId)
-                throw new UnauthorizedAccessException("User does not own this file or folder.");
+                return Result<string>.Failure("User does not own this file or folder.");
 
             if (entry.IsFolder && entry.Children.Any())
-                throw new InvalidOperationException("Cannot delete a folder with contents. Delete children first.");
+                return Result<string>.Failure("Cannot delete a folder with contents. Delete children first.");
 
             // Remove any shared access and delete the file from storage if it’s not a folder
             entry.SharedAccesses.Clear();
@@ -326,13 +326,16 @@ public class FileService : IFileService
 
             await _fileRepository.DeleteAsync(id);
             _logger.LogInformation("{Type} {Id} deleted by user {UserId}", entry.IsFolder ? "Folder" : "File", id, userId);
+
+            return Result<string>.Success($"{(entry.IsFolder ? "Folder" : "File")} deleted successfully.");
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to delete file or folder {Id} for user {UserId}", id, userId);
-            throw new InvalidOperationException("An error occurred while deleting the file or folder.", ex);
+            return Result<string>.Failure("An error occurred while deleting the file or folder.");
         }
     }
+
 
     // Builds the full folder path (e.g., "parent/subfolder") for storage
     private async Task<string> BuildFolderPathAsync(Guid? parentFolderId)
