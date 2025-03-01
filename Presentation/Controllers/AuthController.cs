@@ -13,7 +13,7 @@ public class AuthController : ControllerBase
     {
         _authService = authService ?? throw new ArgumentNullException(nameof(authService));
     }
-
+    //login user
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] LoginRequest request)
     {
@@ -29,7 +29,7 @@ public class AuthController : ControllerBase
 
         return Ok(result.Data);
     }
-
+    //register user
     [HttpPost("register")]
     public async Task<IActionResult> Register([FromBody] LoginRequest request)
     {
@@ -43,5 +43,4 @@ public class AuthController : ControllerBase
 
         return Ok(new { Message = result.Data });
     }
-
 }
