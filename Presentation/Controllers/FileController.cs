@@ -141,7 +141,7 @@ public class FileController : ControllerBase
         return Ok(result);
     }
 
-    // Deletes a file or folder
+    // Deletes a file or folders
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteFileOrFolder(Guid id)
     {
