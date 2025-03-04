@@ -101,7 +101,8 @@ using (var scopeSeed = app.Services.CreateScope())
         context.Users.AddRange(
             new User("user1@gmail.com", "123"),
             new User("user2@gmail.com", "123"),
-            new User("user3@gmail.com", "123")
+            new User("user3@gmail.com", "123"),
+            new User("user4@gmail.com", "123")
 
         );
         await context.SaveChangesAsync();
