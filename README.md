@@ -19,6 +19,14 @@ Built with **Domain-Driven Design (DDD)** principles, the service leverages **.N
 ### Data Storage
 - **Metadata**: Stores file details (e.g., name, type, size, owner, permissions) and user information  **SQL Server** or **Azure SQL Database**.
 - **File Content**: Utilizes **Azure Blob Storage** for efficient and scalable file storage.
+### Deployment and CI/CD
+- **GitHub Actions Workflow**: Automates the build, test, and deployment pipeline, seamlessly deploying the application to **Azure App Service**.
+- **Database Deployment**: Includes the database schema in the repository, automatically deployed during the CI/CD process to **SQL Server** or **Azure SQL Database**.
+- **Configuration**: Fully configured for Azure, with secure management of connection strings, storage settings, and environment-specific variables.
+
+### Testing
+- **Unit Tests**: Comprehensive tests verify core backend functionality, including file uploads, sharing logic, and permission enforcement.
+- **Integration Tests**: Validates seamless interaction between the backend, **SQL Server/Azure SQL Database**, and **Azure Blob Storage**.
 ### Why This Version is Better:
 **1.Clarity**: Simplified language (e.g., "robust backend service" instead of "I developed a backend service") to focus on the project rather than the developer.
 
